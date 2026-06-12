@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mizící žetony v2 opraveno</title>
+<style>
+:root{
+  --xColor:#38bdf8;
+  --oColor:#22c55e;
+  --cell:52px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:radial-gradient(circle at top left,rgba(56,189,248,.22),transparent 35%),linear-gradient(135deg,#020617,#111827);
+  color:#f8fafc;
+  padding:10px;
+}
+.app{
+  max-width:1180px;
+  margin:auto;
+  background:rgba(15,23,42,.96);
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:26px;
+  overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.45);
+}
+header{
+  text-align:center;
+  padding:18px 14px;
+  border-bottom:1px solid rgba(148,163,184,.14);
+}
+h1{margin:0;font-size:clamp(30px,7vw,52px)}
+.sub{color:#94a3b8;margin-top:6px;font-size:14px}
+main{
+  display:grid;
+  grid-template-columns:340px minmax(0,1fr);
+  gap:14px;
+  padding:14px;
+}
+.box{
+  background:rgba(2,6,23,.42);
+  border:1px solid rgba(148,163,184,.14);
+  border-radius:20px;
+  padding:12px;
+}
+.side,.game{display:grid;gap:12px;align-content:start;min-width:0}
+.settings{display:grid;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.gridColor{display:grid;grid-template-columns:1fr 70px;gap:9px;align-items:end}
+label{display:grid;gap:6px;color:#94a3b8;font-size:13px;font-weight:800}
+select,input{
+  width:100%;
+  min-width:0;
+  border-radius:13px;
+  background:#020617;
+  color:#f8fafc;
+  border:1px solid rgba(148,163,184,.22);
+  padding:10px;
+  font-weight:800;
+}
+input[type=color]{height:43px;padding:5px}
+.status{
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  border-radius:20px;
+  background:rgba(2,6,23,.55);
+  border:1px solid rgba(148,163,184,.14);
+  padding:12px;
+  font-size:18px;
+  font-weight:950;
+  color:#38bdf8;
+}
+.status.win{color:#22c55e}
+.status.lose{color:#fb7185}
+.status.draw{color:#facc15}
+.timer{
+  height:14px;
+  border-radius:999px;
+  background:#020617;
+  border:1px solid rgba(148,163,184,.14);
+  overflow:hidden;
+}
+.timerBar{
+  height:100%;
+  width:100%;
+  background:linear-gradient(90deg,#22c55e,#facc15,#fb7185);
+}
+.boardWrap{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  border-radius:24px;
+  padding:10px;
+  background:rgba(2,6,23,.34);
+  border:1px solid rgba(148,163,184,.14);
+}
+.board{
+  display:grid;
+  justify-content:center;
+  margin:auto;
+  gap:5px;
+}
+.cell{
+  width:var(--cell);
+  height:var(--cell);
+  border:0;
+  border-radius:11px;
+  background:linear-gradient(145deg,#1e293b,#020617);
+  box-shadow:inset 0 0 0 1px rgba(148,163,184,.12),0 7px 14px rgba(0,0,0,.22);
+  color:#f8fafc;
+  font-weight:950;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+.cell:disabled{cursor:not-allowed;opacity:.96}
+.cell.x{color:var(--xColor);text-shadow:0 0 14px rgba(56,189,248,.35)}
+.cell.o{color:var(--oColor);text-shadow:0 0 14px rgba(34,197,94,.32)}
+.cell.last{box-shadow:inset 0 0 0 2px rgba(250,204,21,.95),0 0 20px rgba(250,204,21,.22)}
+.cell.nextRemove{opacity:.5;box-shadow:inset 0 0 0 2px rgba(251,113,133,.8),0 0 20px rgba(251,113,133,.2)}
+.cell.win{background:linear-gradient(145deg,rgba(56,189,248,.25),rgba(34,197,94,.25));box-shadow:inset 0 0 0 2px #22c55e}
+.cell.fogged{color:transparent!important;text-shadow:none!important;filter:blur(1px)}
+.cell.fogged::after{content:"?";color:#64748b}
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.score div,.stat{
+  background:rgba(30,41,59,.65);
+  border:1px solid rgba(148,163,184,.12);
+  border-radius:15px;
+  padding:10px;
+  color:#94a3b8;
+  font-size:12px;
+  text-align:center;
+}
+.score strong{display:block;color:#f8fafc;font-size:24px;margin-top:3px}
+.stat{display:flex;justify-content:space-between;text-align:left;font-size:13px}
+.stat strong{color:#f8fafc}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+button{
+  border:0;
+  border-radius:15px;
+  padding:13px 10px;
+  font-weight:950;
+  cursor:pointer;
+  font-size:15px;
+}
+.action{background:linear-gradient(135deg,#38bdf8,#22c55e);color:#06111f}
+.secondary{background:rgba(51,65,85,.9);color:#f8fafc;border:1px solid rgba(148,163,184,.16)}
+.danger{background:rgba(251,113,133,.65);color:white;border:1px solid rgba(251,113,133,.35)}
+.info{color:#94a3b8;text-align:center;font-size:13px;line-height:1.45}
+.hidden{display:none!important}
+@media(max-width:900px){
+  main{grid-template-columns:1fr}
+  .controls{grid-template-columns:1fr}
+}
+@media(max-width:460px){
+  body{padding:6px}
+  main{padding:10px}
+  .grid2{grid-template-columns:1fr}
+  .gridColor{grid-template-columns:1fr 62px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>Mizící žetony</h1>
+  <div class="sub">Opravené mazání žetonů + režim hráč vs UI.</div>
+</header>
+
+<main>
+<aside class="side">
+  <section class="box settings">
+    <label>Režim hry
+      <select id="gameMode">
+        <option value="pvp">Hráč vs hráč</option>
+        <option value="ai">Hráč vs UI</option>
+      </select>
+    </label>
+
+    <label id="difficultyBox">Obtížnost UI
+      <select id="difficulty">
+        <option value="easy">Lehká</option>
+        <option value="normal" selected>Normální</option>
+        <option value="hard">Těžká</option>
+      </select>
+    </label>
+
+    <div class="grid2">
+      <label>Velikost pole<select id="size"></select></label>
+      <label>Žetony na hráče<select id="maxTokens"></select></label>
+    </div>
+
+    <div class="grid2">
+      <label>Spojit pro výhru<select id="winLength"></select></label>
+      <label>Mazání
+        <select id="deleteMode">
+          <option value="hidden">Skryté</option>
+          <option value="visible">Viditelné</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label>Čas na tah
+        <select id="timer">
+          <option value="0">Vypnuto</option>
+          <option value="10">10 s</option>
+          <option value="30">30 s</option>
+          <option value="60">60 s</option>
+        </select>
+      </label>
+      <label>Mlhovina
+        <select id="fog">
+          <option value="off">Vypnuto</option>
+          <option value="last3">Vidíš jen poslední 3 soupeře</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label>Jméno X<input id="xName" value="Hráč X"></label>
+      <label>Jméno O / UI<input id="oName" value="Hráč O"></label>
+    </div>
+
+    <div class="gridColor">
+      <label>Žeton X<select id="xSymbol"></select></label>
+      <label>Barva X<input id="xColor" type="color" value="#38bdf8"></label>
+    </div>
+
+    <div class="gridColor">
+      <label>Žeton O / UI<select id="oSymbol"></select></label>
+      <label>Barva O<input id="oColor" type="color" value="#22c55e"></label>
+    </div>
+  </section>
+
+  <section class="box score">
+    <div><span id="xScoreLabel">X</span><strong id="xScore">0</strong></div>
+    <div><span>Remízy</span><strong id="drawScore">0</strong></div>
+    <div><span id="oScoreLabel">O</span><strong id="oScore">0</strong></div>
+  </section>
+
+  <section class="box">
+    <div class="stat"><span>Tahy</span><strong id="moves">0</strong></div>
+    <div class="stat"><span>Žetony X</span><strong id="xTokens">0/3</strong></div>
+    <div class="stat"><span>Žetony O</span><strong id="oTokens">0/3</strong></div>
+    <div class="stat"><span>Smazáno X</span><strong id="xDeleted">0</strong></div>
+    <div class="stat"><span>Smazáno O</span><strong id="oDeleted">0</strong></div>
+  </section>
+</aside>
+
+<section class="game">
+  <div class="status" id="status">Na tahu je X.</div>
+  <div class="timer" id="timerWrap"><div class="timerBar" id="timerBar"></div></div>
+  <section class="boardWrap" id="boardWrap"><div class="board" id="board"></div></section>
+  <section class="controls">
+    <button class="action" id="newGame">Nová hra</button>
+    <button class="secondary" id="switchStart">Začne druhý</button>
+    <button class="danger" id="resetScore">Vynulovat skóre</button>
+  </section>
+  <div class="info" id="info"></div>
+</section>
+</main>
+</div>
+
+<script>
+const X="X", O="O";
+const SYMBOLS=["X","O","●","■","▲","◆","★","✦","✚","✖","☀","☘","⚡","🔥","💎","🐝","🍯","🌙","👑","🛡️","⚔️","🧊","🐺","🦊","🐉","🌸"];
+
+const $=id=>document.getElementById(id);
+const gameMode=$("gameMode"), difficulty=$("difficulty"), difficultyBox=$("difficultyBox");
+const sizeSel=$("size"), maxTokensSel=$("maxTokens"), winLengthSel=$("winLength"), deleteMode=$("deleteMode"), timerSel=$("timer"), fog=$("fog");
+const xName=$("xName"), oName=$("oName"), xSymbol=$("xSymbol"), oSymbol=$("oSymbol"), xColor=$("xColor"), oColor=$("oColor");
+const boardWrap=$("boardWrap"), boardEl=$("board"), statusEl=$("status"), timerWrap=$("timerWrap"), timerBar=$("timerBar"), info=$("info");
+
+for(let i=3;i<=15;i++){
+  const op=document.createElement("option"); op.value=i; op.textContent=i+" × "+i; if(i===5)op.selected=true; sizeSel.appendChild(op);
+}
+for(let i=3;i<=10;i++){
+  const op=document.createElement("option"); op.value=i; op.textContent=i; if(i===4)op.selected=true; maxTokensSel.appendChild(op);
+}
+for(let i=3;i<=8;i++){
+  const op=document.createElement("option"); op.value=i; op.textContent=i; if(i===4)op.selected=true; winLengthSel.appendChild(op);
+}
+for(const s of SYMBOLS){
+  const a=document.createElement("option"); a.value=s; a.textContent=s; xSymbol.appendChild(a);
+  const b=document.createElement("option"); b.value=s; b.textContent=s; oSymbol.appendChild(b);
+}
+xSymbol.value="X"; oSymbol.value="O";
+
+const saved=JSON.parse(localStorage.getItem("mizejiciZetonyV2Fixed")||"null");
+let score=saved?.score||{x:0,o:0,d:0};
+let settings=saved?.settings||{
+  gameMode:"pvp", difficulty:"normal", size:5, maxTokens:4, winLength:4,
+  deleteMode:"hidden", timer:0, fog:"off",
+  xName:"Hráč X", oName:"Hráč O", xSymbol:"X", oSymbol:"O",
+  xColor:"#38bdf8", oColor:"#22c55e"
+};
+
+let board=[], cells=[], queues={X:[],O:[]}, deleted={X:0,O:0}, history=[];
+let current=X, starter=X, gameOver=false, locked=false, moves=0;
+let timerId=null, timerStart=0, timerLimit=0;
+
+function applySettings(){
+  gameMode.value=settings.gameMode; difficulty.value=settings.difficulty;
+  sizeSel.value=settings.size; maxTokensSel.value=settings.maxTokens; winLengthSel.value=settings.winLength;
+  deleteMode.value=settings.deleteMode; timerSel.value=settings.timer; fog.value=settings.fog;
+  xName.value=settings.xName; oName.value=settings.oName;
+  xSymbol.value=settings.xSymbol; oSymbol.value=settings.oSymbol;
+  xColor.value=settings.xColor; oColor.value=settings.oColor;
+  readSettings(false);
+}
+
+function readSettings(save=true){
+  settings={
+    gameMode:gameMode.value,
+    difficulty:difficulty.value,
+    size:Number(sizeSel.value),
+    maxTokens:Number(maxTokensSel.value),
+    winLength:Number(winLengthSel.value),
+    deleteMode:deleteMode.value,
+    timer:Number(timerSel.value),
+    fog:fog.value,
+    xName:xName.value.trim()||"Hráč X",
+    oName:oName.value.trim()||(gameMode.value==="ai"?"UI":"Hráč O"),
+    xSymbol:xSymbol.value,
+    oSymbol:oSymbol.value,
+    xColor:xColor.value,
+    oColor:oColor.value
+  };
+  if(settings.winLength>settings.size){
+    settings.winLength=settings.size;
+    winLengthSel.value=String(settings.size);
+  }
+  document.documentElement.style.setProperty("--xColor",settings.xColor);
+  document.documentElement.style.setProperty("--oColor",settings.oColor);
+  difficultyBox.classList.toggle("hidden",settings.gameMode!=="ai");
+  timerWrap.classList.toggle("hidden",settings.timer===0);
+  $("xScoreLabel").textContent=settings.xName;
+  $("oScoreLabel").textContent=settings.gameMode==="ai"?"UI":settings.oName;
+  if(save) saveAll();
+  updateInfo();
+  resizeBoard();
+}
+
+function saveAll(){
+  localStorage.setItem("mizejiciZetonyV2Fixed",JSON.stringify({settings,score}));
+}
+
+function newGame(start=starter){
+  stopTimer();
+  readSettings();
+  board=Array(settings.size*settings.size).fill("");
+  queues={X:[],O:[]};
+  deleted={X:0,O:0};
+  history=[];
+  moves=0;
+  current=start;
+  starter=start;
+  gameOver=false;
+  locked=false;
+  boardEl.innerHTML="";
+  boardEl.style.gridTemplateColumns=`repeat(${settings.size}, var(--cell))`;
+  for(let i=0;i<board.length;i++){
+    const btn=document.createElement("button");
+    btn.className="cell";
+    btn.onclick=()=>humanMove(i);
+    boardEl.appendChild(btn);
+  }
+  cells=[...document.querySelectorAll(".cell")];
+  resizeBoard();
+  updateStats();
+  setTurnStatus();
+  render();
+  if(settings.gameMode==="ai" && current===O) {
+    locked=true;
+    setStatus("UI přemýšlí...");
+    setTimeout(aiMove,350);
+  } else startTimer();
+}
+
+function resizeBoard(){
+  if(!boardWrap || !settings) return;
+  const gap=settings.size<=8?5:4;
+  const maxW=Math.min(boardWrap.clientWidth-22,720);
+  const cell=Math.floor((maxW-gap*(settings.size-1))/settings.size);
+  const finalCell=Math.max(18,Math.min(74,cell));
+  document.documentElement.style.setProperty("--cell",finalCell+"px");
+  boardEl.style.gap=gap+"px";
+  cells.forEach(c=>c.style.fontSize=Math.max(12,Math.floor(finalCell*.66))+"px");
+}
+window.addEventListener("resize",resizeBoard);
+
+function humanMove(i){
+  if(gameOver||locked||board[i]) return;
+  doMove(i,current);
+  const result=checkWinner(board);
+  if(result) return finish(result);
+  current=current===X?O:X;
+  updateStats();
+  setTurnStatus();
+  render();
+  if(settings.gameMode==="ai" && current===O){
+    stopTimer();
+    locked=true;
+    setStatus("UI přemýšlí...");
+    render();
+    setTimeout(aiMove,350);
+  } else startTimer();
+}
+
+function doMove(i,player){
+  stopTimer();
+  const q=queues[player];
+  if(q.length>=settings.maxTokens){
+    const oldest=q.shift();
+    board[oldest]="";
+    deleted[player]++;
+  }
+  board[i]=player;
+  q.push(i);
+  history.push({player,index:i});
+  moves++;
+}
+
+function aiMove(){
+  if(gameOver) return;
+  const move=chooseAiMove();
+  if(move!==null && move!==undefined) doMove(move,O);
+  const result=checkWinner(board);
+  if(result){ locked=false; return finish(result); }
+  current=X;
+  locked=false;
+  updateStats();
+  setTurnStatus();
+  render();
+  startTimer();
+}
+
+function chooseAiMove(){
+  const free=emptyCells(board);
+  if(!free.length) return null;
+  if(settings.difficulty==="easy" && Math.random()<.75) return random(free);
+  const win=findImmediate(O);
+  if(win!==null) return win;
+  const block=findImmediate(X);
+  if(block!==null) return block;
+  return bestMove(settings.difficulty==="hard");
+}
+
+function findImmediate(player){
+  for(const i of emptyCells(board)){
+    const sim=simulate(i,player);
+    const res=checkWinner(sim.board);
+    if(res && res.winner===player) return i;
+  }
+  return null;
+}
+
+function bestMove(hard){
+  let best=-Infinity, arr=[];
+  for(const i of emptyCells(board)){
+    const simO=simulate(i,O);
+    const attack=scoreLine(simO.board,i,O,hard);
+    const simX=simulate(i,X);
+    const defend=scoreLine(simX.board,i,X,hard);
+    const center=centerScore(i);
+    const val=attack+defend*.9+center;
+    if(val>best){best=val;arr=[i]}
+    else if(val===best) arr.push(i);
+  }
+  return random(arr);
+}
+
+function simulate(i,player){
+  const b=[...board];
+  const q={X:[...queues.X],O:[...queues.O]};
+  if(q[player].length>=settings.maxTokens){
+    const old=q[player].shift();
+    b[old]="";
+  }
+  b[i]=player;
+  q[player].push(i);
+  return {board:b,queues:q};
+}
+
+function scoreLine(b,i,player,hard){
+  const r=Math.floor(i/settings.size), c=i%settings.size;
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  let total=0;
+  for(const [dr,dc] of dirs){
+    let count=1, open=0;
+    let nr=r+dr,nc=c+dc;
+    while(inBounds(nr,nc)&&b[nr*settings.size+nc]===player){count++;nr+=dr;nc+=dc}
+    if(inBounds(nr,nc)&&b[nr*settings.size+nc]==="") open++;
+    nr=r-dr;nc=c-dc;
+    while(inBounds(nr,nc)&&b[nr*settings.size+nc]===player){count++;nr-=dr;nc-=dc}
+    if(inBounds(nr,nc)&&b[nr*settings.size+nc]==="") open++;
+    total+=Math.pow(10,count)*(open+1);
+    if(hard && open===2 && count>=settings.winLength-2) total+=Math.pow(10,count+1);
+  }
+  return total;
+}
+
+function centerScore(i){
+  const r=Math.floor(i/settings.size), c=i%settings.size;
+  const mid=(settings.size-1)/2;
+  return Math.max(0,settings.size-(Math.abs(r-mid)+Math.abs(c-mid)));
+}
+
+function checkWinner(b){
+  const dirs=[[1,0],[0,1],[1,1],[1,-1]];
+  for(let r=0;r<settings.size;r++){
+    for(let c=0;c<settings.size;c++){
+      const idx=r*settings.size+c;
+      const mark=b[idx];
+      if(!mark) continue;
+      for(const [dr,dc] of dirs){
+        const line=[idx];
+        for(let s=1;s<settings.winLength;s++){
+          const nr=r+dr*s,nc=c+dc*s;
+          if(!inBounds(nr,nc)) break;
+          const ni=nr*settings.size+nc;
+          if(b[ni]!==mark) break;
+          line.push(ni);
+        }
+        if(line.length===settings.winLength) return {winner:mark,line};
+      }
+    }
+  }
+  return null;
+}
+
+function finish(result){
+  gameOver=true;
+  stopTimer();
+  if(result.winner===X){
+    score.x++;
+    setStatus("Vyhrál "+settings.xName+"!","win");
+  }else if(result.winner===O){
+    score.o++;
+    setStatus("Vyhrál "+(settings.gameMode==="ai"?"UI":settings.oName)+"!","win");
+  }
+  saveAll();
+  updateStats();
+  render(result.line);
+}
+
+function render(winLine=[]){
+  if(!cells.length) return;
+  const opponent=current===X?O:X;
+  const visibleOpponent=new Set(queues[opponent].slice(-3));
+  const nextRemove=(settings.deleteMode==="visible"&&!gameOver&&queues[current].length>=settings.maxTokens)?queues[current][0]:null;
+  const last=history.length?history[history.length-1].index:null;
+
+  cells.forEach((cell,i)=>{
+    const mark=board[i];
+    cell.textContent=mark?symbol(mark):"";
+    cell.className="cell";
+    if(mark) cell.classList.add(mark.toLowerCase());
+    if(i===last) cell.classList.add("last");
+    if(i===nextRemove) cell.classList.add("nextRemove");
+    if(winLine.includes(i)) cell.classList.add("win");
+
+    if(settings.fog==="last3" && settings.gameMode==="pvp" && mark===opponent && !visibleOpponent.has(i) && !gameOver){
+      cell.classList.add("fogged");
+    }
+    if(settings.fog==="last3" && settings.gameMode==="ai" && current===X && mark===O && !visibleOpponent.has(i) && !gameOver){
+      cell.classList.add("fogged");
+    }
+
+    cell.disabled=gameOver||locked||Boolean(mark);
+  });
+}
+
+function updateStats(){
+  $("xScore").textContent=score.x;
+  $("oScore").textContent=score.o;
+  $("drawScore").textContent=score.d;
+  $("moves").textContent=moves;
+  $("xTokens").textContent=queues.X.length+"/"+settings.maxTokens;
+  $("oTokens").textContent=queues.O.length+"/"+settings.maxTokens;
+  $("xDeleted").textContent=deleted.X;
+  $("oDeleted").textContent=deleted.O;
+}
+
+function setTurnStatus(){
+  const name=current===X?settings.xName:(settings.gameMode==="ai"?"UI":settings.oName);
+  setStatus("Na tahu je "+name+" ("+symbol(current)+")");
+}
+function setStatus(txt,type=""){statusEl.textContent=txt;statusEl.className="status "+type}
+function symbol(p){return p===X?settings.xSymbol:settings.oSymbol}
+function emptyCells(b){return b.map((v,i)=>v?null:i).filter(v=>v!==null)}
+function inBounds(r,c){return r>=0&&r<settings.size&&c>=0&&c<settings.size}
+function random(arr){return arr[Math.floor(Math.random()*arr.length)]}
+
+function startTimer(){
+  stopTimer();
+  if(settings.timer<=0||gameOver||locked) return;
+  timerLimit=settings.timer*1000;
+  timerStart=Date.now();
+  timerBar.style.width="100%";
+  timerId=setInterval(()=>{
+    const left=Math.max(0,timerLimit-(Date.now()-timerStart));
+    timerBar.style.width=(left/timerLimit*100)+"%";
+    if(left<=0){
+      stopTimer();
+      current=current===X?O:X;
+      setStatus("Čas vypršel, tah propadá.","lose");
+      setTimeout(()=>{
+        if(gameOver) return;
+        if(settings.gameMode==="ai"&&current===O){
+          locked=true;
+          setStatus("UI přemýšlí...");
+          setTimeout(aiMove,350);
+        }else{
+          setTurnStatus();
+          render();
+          startTimer();
+        }
+      },800);
+    }
+  },100);
+}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+
+function updateInfo(){
+  info.textContent=`Pole ${settings.size}×${settings.size} · žetony ${settings.maxTokens} · výhra spoj ${settings.winLength} · mazání ${settings.deleteMode==="hidden"?"skryté":"viditelné"} · režim ${settings.gameMode==="ai"?"hráč vs UI":"hráč vs hráč"}`;
+}
+
+function resetScore(){score={x:0,o:0,d:0};saveAll();updateStats()}
+function switchStart(){starter=starter===X?O:X;newGame(starter)}
+
+const inputs=[gameMode,difficulty,sizeSel,maxTokensSel,winLengthSel,deleteMode,timerSel,fog,xSymbol,oSymbol,xColor,oColor];
+inputs.forEach(el=>el.addEventListener("change",()=>newGame(starter)));
+[xName,oName].forEach(el=>el.addEventListener("input",()=>{readSettings();setTurnStatus();updateStats()}));
+
+$("newGame").onclick=()=>newGame(starter);
+$("switchStart").onclick=switchStart;
+$("resetScore").onclick=resetScore;
+
+applySettings();
+newGame(starter);
+</script>
+</body>
+</html>

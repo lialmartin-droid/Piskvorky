@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mizící žetony</title>
+  <style>
+    :root{
+      --bg:#06111f;
+      --panel:#101827;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --red:#fb7185;
+      --yellow:#facc15;
+      --purple:#a78bfa;
+      --xColor:#38bdf8;
+      --oColor:#22c55e;
+      --shadow:0 24px 70px rgba(0,0,0,.48);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56,189,248,.22), transparent 34%),
+        radial-gradient(circle at 90% 100%, rgba(167,139,250,.18), transparent 30%),
+        linear-gradient(135deg,#020617,#0f172a 48%,#111827);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:12px;
+    }
+
+    .app{
+      width:100%;
+      max-width:1150px;
+      background:rgba(15,23,42,.94);
+      border:1px solid rgba(148,163,184,.18);
+      border-radius:30px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      backdrop-filter:blur(14px);
+    }
+
+    header{
+      padding:20px 16px 14px;
+      text-align:center;
+      border-bottom:1px solid rgba(148,163,184,.14);
+      background:linear-gradient(180deg,rgba(30,41,59,.86),rgba(15,23,42,.22));
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(30px,7vw,52px);
+      letter-spacing:-.05em;
+    }
+
+    .sub{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    main{
+      padding:14px;
+      display:grid;
+      grid-template-columns:340px 1fr;
+      gap:14px;
+    }
+
+    .side,.game{
+      display:grid;
+      gap:12px;
+      align-content:start;
+    }
+
+    .box{
+      background:rgba(2,6,23,.42);
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:22px;
+      padding:13px;
+    }
+
+    .settings{
+      display:grid;
+      gap:10px;
+    }
+
+    label{
+      display:grid;
+      gap:6px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:850;
+    }
+
+    select,input[type="text"],input[type="color"]{
+      width:100%;
+      border-radius:14px;
+      background:#020617;
+      color:var(--text);
+      border:1px solid rgba(148,163,184,.22);
+      padding:10px;
+      font-size:15px;
+      font-weight:850;
+      outline:none;
+    }
+
+    input[type="color"]{
+      height:44px;
+      padding:5px;
+      cursor:pointer;
+    }
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .gridColor{display:grid;grid-template-columns:1fr 72px;gap:9px;align-items:end}
+
+    .score{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+    }
+
+    .score-card,.stat-row,.rule-card{
+      border-radius:16px;
+      background:rgba(30,41,59,.65);
+      border:1px solid rgba(148,163,184,.12);
+      padding:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .score-card{text-align:center}
+    .score-card strong{
+      display:block;
+      color:var(--text);
+      font-size:24px;
+      margin-top:3px;
+    }
+
+    .stat-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font-size:13px;
+    }
+
+    .stat-row strong{color:var(--text)}
+
+    .status{
+      min-height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background:rgba(2,6,23,.55);
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:22px;
+      padding:12px;
+      font-weight:950;
+      font-size:18px;
+      color:var(--blue);
+    }
+
+    .status.win{color:var(--green)}
+    .status.lose{color:var(--red)}
+    .status.draw{color:var(--yellow)}
+    .status.fog{color:var(--purple)}
+
+    .timer-wrap{
+      height:14px;
+      border-radius:999px;
+      background:rgba(2,6,23,.7);
+      border:1px solid rgba(148,163,184,.14);
+      overflow:hidden;
+    }
+
+    .timer-bar{
+      height:100%;
+      width:100%;
+      background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));
+      transition:width .15s linear;
+    }
+
+    .board-wrap{
+      background:rgba(2,6,23,.34);
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:26px;
+      padding:12px;
+      overflow:auto;
+    }
+
+    .board{
+      display:grid;
+      gap:6px;
+      width:min(100%,680px);
+      margin:auto;
+    }
+
+    .cell{
+      aspect-ratio:1/1;
+      min-width:28px;
+      border:none;
+      border-radius:14px;
+      background:linear-gradient(145deg,rgba(30,41,59,.98),rgba(2,6,23,.98));
+      color:var(--text);
+      font-weight:950;
+      cursor:pointer;
+      box-shadow:inset 0 0 0 1px rgba(148,163,184,.12),0 8px 18px rgba(0,0,0,.22);
+      transition:transform .12s ease, box-shadow .12s ease, opacity .2s ease, filter .2s ease;
+      line-height:1;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .cell:hover:not(:disabled){
+      transform:translateY(-2px);
+      box-shadow:inset 0 0 0 1px rgba(56,189,248,.45),0 12px 24px rgba(0,0,0,.32);
+    }
+
+    .cell:disabled{
+      cursor:not-allowed;
+      opacity:.96;
+    }
+
+    .cell.x{
+      color:var(--xColor);
+      text-shadow:0 0 16px rgba(56,189,248,.35);
+    }
+
+    .cell.o{
+      color:var(--oColor);
+      text-shadow:0 0 16px rgba(34,197,94,.32);
+    }
+
+    .cell.last{
+      box-shadow:inset 0 0 0 2px rgba(250,204,21,.9),0 0 24px rgba(250,204,21,.2);
+    }
+
+    .cell.next-remove{
+      opacity:.55;
+      box-shadow:inset 0 0 0 2px rgba(251,113,133,.75),0 0 20px rgba(251,113,133,.18);
+    }
+
+    .cell.win{
+      background:linear-gradient(145deg,rgba(56,189,248,.26),rgba(34,197,94,.26));
+      box-shadow:inset 0 0 0 2px rgba(34,197,94,.75),0 0 24px rgba(34,197,94,.2);
+    }
+
+    .cell.fogged{
+      color:transparent!important;
+      text-shadow:none!important;
+      filter:blur(1px);
+    }
+
+    .cell.fogged::after{
+      content:"?";
+      color:#64748b;
+      font-weight:900;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      border:none;
+      border-radius:16px;
+      padding:13px 10px;
+      font-weight:950;
+      cursor:pointer;
+      font-size:15px;
+    }
+
+    .action{
+      color:#06111f;
+      background:linear-gradient(135deg,var(--blue),var(--green));
+    }
+
+    .secondary{
+      color:var(--text);
+      background:rgba(51,65,85,.88);
+      border:1px solid rgba(148,163,184,.16);
+    }
+
+    .danger{
+      color:white;
+      background:rgba(251,113,133,.65);
+      border:1px solid rgba(251,113,133,.35);
+    }
+
+    .info{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+      text-align:center;
+    }
+
+    .rules{
+      display:grid;
+      gap:8px;
+    }
+
+    .rule-card strong{
+      color:var(--text);
+      display:block;
+      margin-bottom:4px;
+      font-size:13px;
+    }
+
+    .hidden{display:none!important}
+
+    @media(max-width:900px){
+      main{grid-template-columns:1fr}
+      .controls{grid-template-columns:1fr}
+    }
+
+    @media(max-width:460px){
+      body{padding:8px}
+      main{padding:12px}
+      .board{gap:5px}
+      .cell{border-radius:10px}
+      .gridColor{grid-template-columns:1fr 62px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Mizící žetony</h1>
+    <div class="sub">Strategická hra pro 2 hráče na jednom telefonu. Pamatuj si pořadí tahů, jinak tě mazání překvapí.</div>
+  </header>
+
+  <main>
+    <aside class="side">
+      <section class="box settings">
+        <div class="grid2">
+          <label>
+            Velikost pole
+            <select id="sizeSelect"></select>
+          </label>
+          <label>
+            Žetony na hráče
+            <select id="tokensSelect"></select>
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            Spojit pro výhru
+            <select id="winSelect"></select>
+          </label>
+          <label>
+            Mazání
+            <select id="deleteModeSelect">
+              <option value="hidden" selected>Skryté</option>
+              <option value="visible">Viditelné</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            Čas na tah
+            <select id="timerSelect">
+              <option value="0" selected>Vypnuto</option>
+              <option value="10">10 s</option>
+              <option value="30">30 s</option>
+              <option value="60">60 s</option>
+            </select>
+          </label>
+          <label>
+            Mlhovina
+            <select id="fogSelect">
+              <option value="off" selected>Vypnuto</option>
+              <option value="last3">Vidíš jen poslední 3 soupeře</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            Jméno hráče X
+            <input id="xNameInput" type="text" value="Hráč X">
+          </label>
+          <label>
+            Jméno hráče O
+            <input id="oNameInput" type="text" value="Hráč O">
+          </label>
+        </div>
+
+        <div class="gridColor">
+          <label>
+            Žeton X
+            <select id="xSymbolSelect"></select>
+          </label>
+          <label>
+            Barva X
+            <input id="xColorInput" type="color" value="#38bdf8">
+          </label>
+        </div>
+
+        <div class="gridColor">
+          <label>
+            Žeton O
+            <select id="oSymbolSelect"></select>
+          </label>
+          <label>
+            Barva O
+            <input id="oColorInput" type="color" value="#22c55e">
+          </label>
+        </div>
+      </section>
+
+      <section class="box">
+        <div class="score">
+          <div class="score-card"><span id="xScoreLabel">X</span><strong id="xScore">0</strong></div>
+          <div class="score-card"><span>Remízy</span><strong id="drawScore">0</strong></div>
+          <div class="score-card"><span id="oScoreLabel">O</span><strong id="oScore">0</strong></div>
+        </div>
+      </section>
+
+      <section class="box">
+        <div class="stat-row"><span>Tahy v partii</span><strong id="movesStat">0</strong></div>
+        <div class="stat-row"><span>Žetony X</span><strong id="xTokensStat">0/3</strong></div>
+        <div class="stat-row"><span>Žetony O</span><strong id="oTokensStat">0/3</strong></div>
+        <div class="stat-row"><span>Smazáno X</span><strong id="xDeletedStat">0</strong></div>
+        <div class="stat-row"><span>Smazáno O</span><strong id="oDeletedStat">0</strong></div>
+      </section>
+
+      <section class="box rules">
+        <div class="rule-card">
+          <strong>Skryté mazání</strong>
+          Hra neukazuje, který žeton zmizí. Každý hráč si musí pamatovat vlastní pořadí tahů.
+        </div>
+        <div class="rule-card">
+          <strong>Mlhovina</strong>
+          Když je zapnutá, aktuální hráč vidí jen poslední 3 soupeřovy žetony. Starší soupeřovy žetony jsou zahalené.
+        </div>
+      </section>
+    </aside>
+
+    <section class="game">
+      <div class="status" id="status">Na tahu je hráč X.</div>
+
+      <div class="timer-wrap" id="timerWrap">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+
+      <section class="board-wrap">
+        <div class="board" id="board"></div>
+      </section>
+
+      <section class="controls">
+        <button class="action" id="newGameBtn">Nová hra</button>
+        <button class="secondary" id="switchStartBtn">Začne druhý</button>
+        <button class="danger" id="resetScoreBtn">Vynulovat skóre</button>
+      </section>
+
+      <div class="info" id="info"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const PLAYER_X = "X";
+  const PLAYER_O = "O";
+  const SYMBOLS = ["X","O","●","■","▲","◆","★","✦","✚","✖","☀","☘","⚡","🔥","💎","🐝","🍯","🌙","👑","🛡️","⚔️","🧊","🐺","🦊","🐉","🌸"];
+
+  const sizeSelect = document.getElementById("sizeSelect");
+  const tokensSelect = document.getElementById("tokensSelect");
+  const winSelect = document.getElementById("winSelect");
+  const deleteModeSelect = document.getElementById("deleteModeSelect");
+  const timerSelect = document.getElementById("timerSelect");
+  const fogSelect = document.getElementById("fogSelect");
+
+  const xNameInput = document.getElementById("xNameInput");
+  const oNameInput = document.getElementById("oNameInput");
+  const xSymbolSelect = document.getElementById("xSymbolSelect");
+  const oSymbolSelect = document.getElementById("oSymbolSelect");
+  const xColorInput = document.getElementById("xColorInput");
+  const oColorInput = document.getElementById("oColorInput");
+
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const timerWrap = document.getElementById("timerWrap");
+  const timerBar = document.getElementById("timerBar");
+  const infoEl = document.getElementById("info");
+
+  const xScoreLabel = document.getElementById("xScoreLabel");
+  const oScoreLabel = document.getElementById("oScoreLabel");
+  const xScore = document.getElementById("xScore");
+  const oScore = document.getElementById("oScore");
+  const drawScore = document.getElementById("drawScore");
+
+  const movesStat = document.getElementById("movesStat");
+  const xTokensStat = document.getElementById("xTokensStat");
+  const oTokensStat = document.getElementById("oTokensStat");
+  const xDeletedStat = document.getElementById("xDeletedStat");
+  const oDeletedStat = document.getElementById("oDeletedStat");
+
+  const newGameBtn = document.getElementById("newGameBtn");
+  const switchStartBtn = document.getElementById("switchStartBtn");
+  const resetScoreBtn = document.getElementById("resetScoreBtn");
+
+  for(let i=3;i<=15;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = i + " × " + i;
+    if(i === 5) opt.selected = true;
+    sizeSelect.appendChild(opt);
+  }
+
+  for(let i=3;i<=10;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = i;
+    if(i === 4) opt.selected = true;
+    tokensSelect.appendChild(opt);
+  }
+
+  for(let i=3;i<=8;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = i;
+    if(i === 4) opt.selected = true;
+    winSelect.appendChild(opt);
+  }
+
+  for(const s of SYMBOLS){
+    const a = document.createElement("option");
+    a.value = s;
+    a.textContent = s;
+    xSymbolSelect.appendChild(a);
+
+    const b = document.createElement("option");
+    b.value = s;
+    b.textContent = s;
+    oSymbolSelect.appendChild(b);
+  }
+  xSymbolSelect.value = "X";
+  oSymbolSelect.value = "O";
+
+  const saved = JSON.parse(localStorage.getItem("mizejiciZetonyV1") || "null");
+  let settings = saved?.settings || {
+    size:5,
+    maxTokens:4,
+    winLength:4,
+    deleteMode:"hidden",
+    timer:0,
+    fog:"off",
+    xName:"Hráč X",
+    oName:"Hráč O",
+    xSymbol:"X",
+    oSymbol:"O",
+    xColor:"#38bdf8",
+    oColor:"#22c55e"
+  };
+
+  let score = saved?.score || {x:0,o:0,draw:0};
+
+  let board = [];
+  let cells = [];
+  let currentPlayer = PLAYER_X;
+  let startingPlayer = PLAYER_X;
+  let gameOver = false;
+  let moveCount = 0;
+  let deleted = {X:0,O:0};
+  let queues = {X:[],O:[]};
+  let moveHistory = [];
+  let timerId = null;
+  let timerStarted = 0;
+  let timerLimit = 0;
+
+  function applySavedSettings(){
+    sizeSelect.value = settings.size;
+    tokensSelect.value = settings.maxTokens;
+    winSelect.value = settings.winLength;
+    deleteModeSelect.value = settings.deleteMode;
+    timerSelect.value = settings.timer;
+    fogSelect.value = settings.fog;
+    xNameInput.value = settings.xName;
+    oNameInput.value = settings.oName;
+    xSymbolSelect.value = settings.xSymbol;
+    oSymbolSelect.value = settings.oSymbol;
+    xColorInput.value = settings.xColor;
+    oColorInput.value = settings.oColor;
+    updateSettingsFromUI(false);
+  }
+
+  function updateSettingsFromUI(save=true){
+    settings = {
+      size:Number(sizeSelect.value),
+      maxTokens:Number(tokensSelect.value),
+      winLength:Number(winSelect.value),
+      deleteMode:deleteModeSelect.value,
+      timer:Number(timerSelect.value),
+      fog:fogSelect.value,
+      xName:xNameInput.value.trim() || "Hráč X",
+      oName:oNameInput.value.trim() || "Hráč O",
+      xSymbol:xSymbolSelect.value,
+      oSymbol:oSymbolSelect.value,
+      xColor:xColorInput.value,
+      oColor:oColorInput.value
+    };
+
+    if(settings.winLength > settings.size){
+      settings.winLength = settings.size;
+      winSelect.value = String(settings.winLength);
+    }
+
+    document.documentElement.style.setProperty("--xColor", settings.xColor);
+    document.documentElement.style.setProperty("--oColor", settings.oColor);
+
+    xScoreLabel.textContent = settings.xName;
+    oScoreLabel.textContent = settings.oName;
+
+    timerWrap.classList.toggle("hidden", settings.timer === 0);
+
+    if(save) saveAll();
+    updateInfo();
+    render();
+  }
+
+  function saveAll(){
+    localStorage.setItem("mizejiciZetonyV1", JSON.stringify({settings, score}));
+  }
+
+  function newGame(start=startingPlayer){
+    stopTimer();
+    updateSettingsFromUI();
+
+    board = Array(settings.size * settings.size).fill("");
+    queues = {X:[],O:[]};
+    moveHistory = [];
+    deleted = {X:0,O:0};
+    moveCount = 0;
+    gameOver = false;
+    currentPlayer = start;
+    startingPlayer = start;
+
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = `repeat(${settings.size}, 1fr)`;
+
+    const fontSize = settings.size <= 3 ? 74 : settings.size <= 5 ? 52 : settings.size <= 8 ? 36 : settings.size <= 12 ? 28 : 23;
+
+    for(let i=0;i<board.length;i++){
+      const btn = document.createElement("button");
+      btn.className = "cell";
+      btn.style.fontSize = `clamp(16px, ${fontSize}px, ${fontSize}px)`;
+      btn.addEventListener("click", () => playMove(i));
+      boardEl.appendChild(btn);
+    }
+
+    cells = Array.from(document.querySelectorAll(".cell"));
+    setTurnStatus();
+    updateStats();
+    render();
+    startTimer();
+  }
+
+  function playMove(index){
+    if(gameOver || board[index]) return;
+
+    stopTimer();
+
+    const queue = queues[currentPlayer];
+
+    if(queue.length >= settings.maxTokens){
+      const oldest = queue.shift();
+      board[oldest] = "";
+      deleted[currentPlayer]++;
+    }
+
+    board[index] = currentPlayer;
+    queue.push(index);
+    moveHistory.push({player:currentPlayer,index,turn:moveCount + 1});
+    moveCount++;
+
+    const result = checkWinner();
+
+    if(result){
+      finishGame(result);
+      return;
+    }
+
+    currentPlayer = currentPlayer === PLAYER_X ? PLAYER_O : PLAYER_X;
+    setTurnStatus();
+    updateStats();
+    render();
+    startTimer();
+  }
+
+  function finishGame(result){
+    gameOver = true;
+    stopTimer();
+
+    if(result.winner === PLAYER_X){
+      score.x++;
+      statusEl.textContent = "Vyhrál " + settings.xName + "!";
+      statusEl.className = "status win";
+    } else if(result.winner === PLAYER_O){
+      score.o++;
+      statusEl.textContent = "Vyhrál " + settings.oName + "!";
+      statusEl.className = "status win";
+    } else {
+      score.draw++;
+      statusEl.textContent = "Remíza.";
+      statusEl.className = "status draw";
+    }
+
+    saveAll();
+    updateStats();
+    render(result.line || []);
+  }
+
+  function setTurnStatus(){
+    const name = currentPlayer === PLAYER_X ? settings.xName : settings.oName;
+    const symbol = currentPlayer === PLAYER_X ? settings.xSymbol : settings.oSymbol;
+    statusEl.textContent = "Na tahu je " + name + " (" + symbol + ")";
+    statusEl.className = settings.fog === "last3" ? "status fog" : "status";
+  }
+
+  function startTimer(){
+    if(settings.timer <= 0 || gameOver) return;
+
+    timerLimit = settings.timer * 1000;
+    timerStarted = Date.now();
+    timerBar.style.width = "100%";
+
+    timerId = setInterval(() => {
+      const elapsed = Date.now() - timerStarted;
+      const remaining = Math.max(0, timerLimit - elapsed);
+      const pct = (remaining / timerLimit) * 100;
+      timerBar.style.width = pct + "%";
+
+      if(remaining <= 0){
+        stopTimer();
+        handleTimeout();
+      }
+    }, 100);
+  }
+
+  function stopTimer(){
+    if(timerId){
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function handleTimeout(){
+    if(gameOver) return;
+
+    statusEl.textContent = "Čas vypršel. Tah propadá hráči " + getPlayerName(currentPlayer) + ".";
+    statusEl.className = "status lose";
+
+    currentPlayer = currentPlayer === PLAYER_X ? PLAYER_O : PLAYER_X;
+
+    setTimeout(() => {
+      if(!gameOver){
+        setTurnStatus();
+        render();
+        startTimer();
+      }
+    }, 900);
+  }
+
+  function checkWinner(){
+    const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    const size = settings.size;
+    const need = settings.winLength;
+
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        const idx = r * size + c;
+        const mark = board[idx];
+        if(!mark) continue;
+
+        for(const [dr,dc] of dirs){
+          const line = [idx];
+
+          for(let step=1;step<need;step++){
+            const nr = r + dr * step;
+            const nc = c + dc * step;
+            if(nr < 0 || nr >= size || nc < 0 || nc >= size) break;
+
+            const ni = nr * size + nc;
+            if(board[ni] !== mark) break;
+            line.push(ni);
+          }
+
+          if(line.length === need){
+            return {winner:mark,line};
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function render(winLine=[]){
+    if(!cells.length) return;
+
+    const opponent = currentPlayer === PLAYER_X ? PLAYER_O : PLAYER_X;
+    const visibleOpponent = new Set(queues[opponent].slice(-3));
+
+    let nextRemove = null;
+    if(settings.deleteMode === "visible" && !gameOver && queues[currentPlayer].length >= settings.maxTokens){
+      nextRemove = queues[currentPlayer][0];
+    }
+
+    cells.forEach((cell,i) => {
+      const mark = board[i];
+      cell.textContent = mark ? getSymbol(mark) : "";
+      cell.className = "cell";
+
+      if(mark) cell.classList.add(mark.toLowerCase());
+      if(i === moveHistory.at(-1)?.index) cell.classList.add("last");
+      if(i === nextRemove) cell.classList.add("next-remove");
+      if(winLine.includes(i)) cell.classList.add("win");
+
+      if(settings.fog === "last3" && mark === opponent && !visibleOpponent.has(i) && !gameOver){
+        cell.classList.add("fogged");
+      }
+
+      cell.disabled = gameOver || Boolean(mark);
+    });
+  }
+
+  function updateStats(){
+    xScore.textContent = score.x;
+    oScore.textContent = score.o;
+    drawScore.textContent = score.draw;
+
+    movesStat.textContent = moveCount;
+    xTokensStat.textContent = queues.X.length + "/" + settings.maxTokens;
+    oTokensStat.textContent = queues.O.length + "/" + settings.maxTokens;
+    xDeletedStat.textContent = deleted.X;
+    oDeletedStat.textContent = deleted.O;
+  }
+
+  function updateInfo(){
+    infoEl.textContent =
+      "Pole " + settings.size + "×" + settings.size +
+      " · žetony na hráče: " + settings.maxTokens +
+      " · výhra: spoj " + settings.winLength +
+      " · mazání: " + (settings.deleteMode === "hidden" ? "skryté" : "viditelné") +
+      " · čas: " + (settings.timer ? settings.timer + " s" : "vypnuto") +
+      " · mlhovina: " + (settings.fog === "last3" ? "zapnuto" : "vypnuto");
+  }
+
+  function getSymbol(mark){
+    return mark === PLAYER_X ? settings.xSymbol : settings.oSymbol;
+  }
+
+  function getPlayerName(mark){
+    return mark === PLAYER_X ? settings.xName : settings.oName;
+  }
+
+  function resetScore(){
+    score = {x:0,o:0,draw:0};
+    saveAll();
+    updateStats();
+  }
+
+  function switchStarter(){
+    startingPlayer = startingPlayer === PLAYER_X ? PLAYER_O : PLAYER_X;
+    newGame(startingPlayer);
+  }
+
+  const settingInputs = [
+    sizeSelect,tokensSelect,winSelect,deleteModeSelect,timerSelect,fogSelect,
+    xNameInput,oNameInput,xSymbolSelect,oSymbolSelect,xColorInput,oColorInput
+  ];
+
+  settingInputs.forEach(el => {
+    el.addEventListener("change", () => newGame(startingPlayer));
+    if(el.tagName === "INPUT"){
+      el.addEventListener("input", () => {
+        updateSettingsFromUI();
+        setTurnStatus();
+      });
+    }
+  });
+
+  newGameBtn.addEventListener("click", () => newGame(startingPlayer));
+  switchStartBtn.addEventListener("click", switchStarter);
+  resetScoreBtn.addEventListener("click", resetScore);
+
+  applySavedSettings();
+  updateStats();
+  newGame(startingPlayer);
+</script>
+</body>
+</html>
